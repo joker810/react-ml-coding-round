@@ -1,0 +1,102 @@
+import { useState, useEffect, useRef } from "react";
+import "./App.css";
+
+const display = () => {
+  const [searchtext, setSearchText] = useState("");
+
+  const [searchResult, setSearchresult] = useState([]);
+  const [isClicked, setIsclicked] = useState(false);
+  const myRef = useRef();
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+
+  function handleChange(e) {
+    let value = e.target.value.trim();
+    setSearchText(value);
+  }
+
+  // localStorage.setitem("foundRes", JSON.stringify({}));
+
+  async function fetchData() {
+    const cachedData = JSON.parse(localStorage.getItem("foundRes")) || {};
+    if (cachedData[searchtext]) {
+      setSearchresult(cachedData[searchtext]);
+      console.log("this is cache ", searchResult);
+      return;
+    }
+
+    console.log("making a api call");
+    const url = "https://dummyjson.com/recipes/search";
+    const fetchdata = await fetch(`${url}?q=${searchtext}`);
+    const data = await fetchdata.json();
+
+    setSearchresult(data);
+    cachedData[searchtext] = data;
+    localStorage.setItem("foundRes", JSON.stringify(cachedData));
+    console.log(data);
+  }
+
+  useEffect(() => {
+    let timer;
+    setTimeout(() => {
+      timer = fetchData();
+      myRef.current?.focus();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchtext]);
+
+  function handleKeys(e) {
+    if (e.key === "ArrowDown") {
+      setHighlightIndex((prev) =>
+        prev < searchResult.recipes.length - 1 ? prev + 1 : 0
+      );
+    }
+    if (e.key === "ArrowUp") {
+      setHighlightIndex((prev) =>
+        prev > 0 ? prev - 1 : searchResult.recipes.length - 1
+      );
+    }
+    if (e.key === "Enter" && highlightIndex !== -1) {
+      const selected = searchResult.recipes[highlightIndex];
+      setSearchText(selected.name);
+    }
+  }
+  return (
+    <>
+      <div className="tab">
+        <h1>Autocomplete search Bar</h1>
+        <input
+          className="ip"
+          type="text"
+          placeholder="Search here"
+          value={searchtext}
+          onChange={(e) => handleChange(e)}
+          onMouseDown={() => setIsclicked(true)}
+          onBlur={() => setIsclicked(false)}
+          ref={myRef}
+          onKeyDown={(e) => {
+            handleKeys(e);
+          }}
+        />
+        <div className="res-div">
+          {searchResult.recipes &&
+            isClicked &&
+            searchResult.recipes.map((res, index) => (
+              <p
+                className={`res-p ${
+                  index === highlightIndex ? "highlight" : ""
+                }`}
+                key={res.id}
+                onMouseDown={() => {
+                  setSearchText(res.name);
+                }}
+              >
+                {res.name}
+              </p>
+            ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default display;
