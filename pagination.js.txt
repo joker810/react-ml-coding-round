@@ -1,0 +1,89 @@
+import "./App.css";
+import { useState, useEffect } from "react";
+
+function ProductCard({ image, title, price }) {
+  return (
+    <div className="product-card">
+      <div className="img-container">
+        <img src={image} alt={title} />
+        <p>{title}</p>
+      </div>
+
+      <p>Price : {price}</p>
+    </div>
+  );
+}
+const Products_per_Page = 10;
+
+function App() {
+  const [data, setData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const fetchData = async () => {
+    const url = "https://dummyjson.com/products?limit=500";
+    const fetchdata = await fetch(`${url}`);
+    const data = await fetchdata.json();
+    setData(data.products);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [data]);
+
+  const totalNoPage = Math.ceil(data.length / Products_per_Page);
+  const start = currentPage * Products_per_Page;
+  const end = start + Products_per_Page;
+
+  function handlePageChange(n) {
+    setCurrentPage(n);
+  }
+
+  function handlePrev() {
+    setCurrentPage((prev) => prev - 1);
+  }
+  function handleNext() {
+    setCurrentPage((prev) => prev + 1);
+  }
+
+  return (
+    <>
+      <h1>Pagination</h1>
+
+      <div className="container">
+        <div className="pagination-container">
+          <button onClick={handlePrev} disabled={currentPage === 0}>
+            prev
+          </button>
+          {[...Array(totalNoPage).keys()].map((n, index) => (
+            <span
+              key={n}
+              className={`page-container ${
+                index === currentPage ? "highlight" : ""
+              }`}
+              onClick={() => {
+                handlePageChange(n);
+              }}
+            >
+              {n}
+            </span>
+          ))}
+          <button onClick={handleNext} disabled={currentPage === totalNoPage}>
+            next
+          </button>
+        </div>
+        {data &&
+          data
+            .slice(start, end)
+            .map((item) => (
+              <ProductCard
+                key={item.id}
+                image={item.thumbnail}
+                price={item.price}
+                title={item.title}
+              />
+            ))}
+      </div>
+    </>
+  );
+}
+
+export default App;
