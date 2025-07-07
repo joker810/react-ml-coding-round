@@ -1,0 +1,88 @@
+import { useState } from "react";
+import "./App.css";
+const checkBoxes_data = [
+  {
+    id: 1,
+    name: "Fruits",
+    child: [
+      {
+        id: 2,
+        name: "citrus",
+        child: [
+          { id: 3, name: "orange" },
+          { id: 4, name: "lemon" },
+        ],
+      },
+      {
+        id: 5,
+        name: "berry",
+        child: [
+          { id: 6, name: "blueberry" },
+          { id: 7, name: "blackberry" },
+        ],
+      },
+    ],
+  },
+];
+
+const List = ({ data, checked, setChecked }) => {
+  const handleChange = (isChecked, item) => {
+    setChecked((prev) => {
+      const copyObj = { ...prev, [item.id]: isChecked };
+
+      function updateTree(node) {
+        node.child?.forEach((child) => {
+          copyObj[child.id] = isChecked;
+          node.child && updateTree(child);
+        });
+      }
+      updateTree(item);
+
+      const verifyAllChild = (node) => {
+        if (!node.child) return copyObj[node.id] || false;
+
+        const everyChild = node.child.every((child) => verifyAllChild(child));
+
+        copyObj[node.id] = everyChild;
+
+        return everyChild;
+      };
+      checkBoxes_data.forEach((node) => verifyAllChild(node));
+
+      return copyObj;
+    });
+  };
+  return (
+    <>
+      {data.map((item) => (
+        <div className="parent" key={item.id}>
+          <input
+            type="checkbox"
+            checked={checked[item.id] || false}
+            onChange={(e) => handleChange(e.target.checked, item)}
+          />
+          <span>{item.name}</span>
+          {item.child && (
+            <List data={item.child} checked={checked} setChecked={setChecked} />
+          )}
+        </div>
+      ))}
+    </>
+  );
+};
+
+export default function App() {
+  const [checked, setChecked] = useState({});
+  return (
+    <>
+      <h1>nested childs</h1>
+      <div>
+        <List
+          data={checkBoxes_data}
+          checked={checked}
+          setChecked={setChecked}
+        />
+      </div>
+    </>
+  );
+}
